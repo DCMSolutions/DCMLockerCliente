@@ -195,15 +195,9 @@ namespace DCMLockerCommunication
                             Ping ping = new Ping();
                             PingReply reply = await ping.SendPingAsync(IP);
 
-                            if (reply.Status == IPStatus.Success)
+                            if (reply.Status != IPStatus.Success)
                             {
-                                Console.WriteLine($"Ping successful: Roundtrip time = {reply.RoundtripTime}ms");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Ping failed: {reply.Status}");
-                                // Perform any actions needed upon disconnection
-                                break;
+                                throw new Exception("Ping error");
                             }
 
                             if (_BoxActionQueue.Count > 0)
