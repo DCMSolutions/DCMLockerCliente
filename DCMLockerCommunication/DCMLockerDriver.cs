@@ -287,6 +287,7 @@ namespace DCMLockerCommunication
             }
             catch 
             {
+                Console.WriteLine("salimooooooooooooooooooooooooooooooooooooooooooooooooooooooo");
             }
         }
     }

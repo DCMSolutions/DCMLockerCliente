@@ -147,7 +147,6 @@ namespace DCMLocker.Server.Background
         {
             EvtArgCUChange v = (EvtArgCUChange)e;
             _hubContext.Clients.All.LockerUpdated(v.CU.ADDR, "Cambio");
-            Console.WriteLine("on cu change aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
             //Console.WriteLine("CAMBIO:");
             //for (int x = 0; x < 16; x++)
