@@ -31,7 +31,7 @@ namespace DCMLocker.Server.Background
     }
 
 
-    /// <summary> %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%555
+    /// <summary> %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     /// Servicio Backgroud para atender al Hardware del locker
     /// </summary> %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     public class DCMLockerController : IHostedService, IDisposable
@@ -76,7 +76,7 @@ namespace DCMLocker.Server.Background
             driver.Port = 4001;
 
             driver.Start();
-            Console.WriteLine("despues del start.............................................................");
+
             return Task.CompletedTask;
         }
         //-----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ namespace DCMLocker.Server.Background
         {
             EvtArgCUChange v = (EvtArgCUChange)e;
             _hubContext.Clients.All.LockerUpdated(v.CU.ADDR, "Cambio");
-
+            Console.WriteLine("on cu change aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
             //Console.WriteLine("CAMBIO:");
             //for (int x = 0; x < 16; x++)

@@ -191,6 +191,7 @@ namespace DCMLockerCommunication
                     {
                         while (Cliente.Connected)
                         {
+
                             if (_BoxActionQueue.Count > 0)
                             {
                                 byte addr = 0;
@@ -223,6 +224,7 @@ namespace DCMLockerCommunication
                                 byte[] b = trama.ToArray();
                                 stream.Write(b, 0, b.Length);
                             }
+
                             if (Cliente.Available > 0)
                             {
                                 int Reallen = stream.Read(rx, 0, Cliente.Available);
@@ -281,8 +283,11 @@ namespace DCMLockerCommunication
                     this.SendOnDisConnection();
                     Thread.Sleep(100);
                 }
+
             }
-            catch { }
+            catch 
+            {
+            }
         }
     }
 
