@@ -197,6 +197,7 @@ namespace DCMLockerCommunication
                         if (reply.Status != IPStatus.Success)
                         {
                             connectedLocal = false;
+                            break;
                         }
 
                         if (_BoxActionQueue.Count > 0)
