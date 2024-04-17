@@ -173,128 +173,125 @@ namespace DCMLockerCommunication
         async void WorkTCP(object state)
         {
 
-            try
+            byte[] rx = new byte[1024];
+            byte[] realrx = new byte[10];
+
+            int rxstate = 0;
+            // Buscamos CU por medio de TCP
+
+            while (true)
             {
-                byte[] rx = new byte[1024];
-                byte[] realrx = new byte[10];
-
-                int rxstate = 0;
-                // Buscamos CU por medio de TCP
-
-                while (true)
+                try
                 {
-                    try
+                    TcpClient Cliente = new TcpClient();
+                    await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
+                    DateTime timeref = DateTime.Now;
+                    NetworkStream stream = Cliente.GetStream();
+                    this.SendOnConnection();
+                    bool connectedLocal = true;
+                    while (Cliente.Connected && connectedLocal)
                     {
-                        TcpClient Cliente = new TcpClient();
-                        await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
-                        DateTime timeref = DateTime.Now;
-                        NetworkStream stream = Cliente.GetStream();
-                        this.SendOnConnection();
-                        bool connectedLocal = true;
-                        while (Cliente.Connected && connectedLocal)
+                        Ping ping = new Ping();
+                        PingReply reply = await ping.SendPingAsync(IP);
+
+                        if (reply.Status != IPStatus.Success)
                         {
-                            Ping ping = new Ping();
-                            PingReply reply = await ping.SendPingAsync(IP);
-
-                            if (reply.Status != IPStatus.Success)
-                            {
-                                connectedLocal = false;
-                            }
-
-                            if (_BoxActionQueue.Count > 0)
-                            {
-                                byte addr = 0;
-                                lock (objsync)
-                                {
-                                    addr = _BoxActionQueue.Dequeue();
-                                }
-                                // Pregunto el estado del dispositivo
-                                PTransporte trama = new PTransporte();
-                                trama.DATA = new PLockerTablet()
-                                {
-                                    ADDR = addr,
-                                    CMD = PLocker.enumCMD.DoorOpen
-                                };
-                                byte[] b = trama.ToArray();
-                                stream.Write(b, 0, b.Length);
-                            }
-
-
-                            if (DateTime.Now.Subtract(timeref).TotalMilliseconds > 500)
-                            {
-                                timeref = DateTime.Now;
-                                // Pregunto el estado del dispositivo
-                                PTransporte trama = new PTransporte();
-                                trama.DATA = new PLockerTablet()
-                                {
-                                    ADDR = 0xf0,
-                                    CMD = PLocker.enumCMD.RqtLockAndInfraredStatus
-                                };
-                                byte[] b = trama.ToArray();
-                                stream.Write(b, 0, b.Length);
-                            }
-
-                            if (Cliente.Available > 0)
-                            {
-                                int Reallen = stream.Read(rx, 0, Cliente.Available);
-                                int y = 0;
-                                for (int x = 0; x < 1000; x++)
-                                {
-                                    switch (rxstate)
-                                    {
-                                        case 0:
-                                            y = 0;
-                                            realrx[y] = rx[x];
-                                            if (rx[x] == PTransporte.STX) rxstate = 1;
-                                            break;
-                                        case 1:
-                                            y++;
-                                            realrx[y] = rx[x];
-                                            if (rx[x] == PTransporte.ETX) rxstate = 2;
-                                            break;
-                                        case 2:
-                                            y++;
-                                            realrx[y] = rx[x];
-                                            PLockerBoard l = (PLockerBoard)PTransporte.GetPkt(realrx, y + 1);
-                                            if (l != null)
-                                            {
-                                                UInt16 sd = BitConverter.ToUInt16(l.STATUS, 0);
-                                                UInt16 ss = BitConverter.ToUInt16(l.STATUS, 2);
-                                                bool cuchange = false;
-                                                if (this._CU[l.CU].DoorStatus.Status != sd)
-                                                {
-                                                    this._CU[l.CU].DoorStatus.Status = sd;
-                                                    cuchange = true;
-                                                }
-                                                if (this._CU[l.CU].SensorStatus.Status != ss)
-                                                {
-                                                    this._CU[l.CU].SensorStatus.Status = ss;
-                                                    cuchange = true;
-                                                }
-                                                if (cuchange) this.SendOnCUChange(this._CU[l.CU]);
-
-                                                rxstate = 0;
-                                            }
-
-                                            break;
-
-                                    }
-                                }
-                            }
-                            else Thread.Sleep(100); // dormimos si no hay datos
+                            connectedLocal = false;
                         }
-                    }
-                    catch (ThreadInterruptedException) { throw; }
-                    catch (Exception er)
-                    {
-                        this.SendOnError(er);
-                    }
-                    this.SendOnDisConnection();
-                    Thread.Sleep(100);
-                }
 
+                        if (_BoxActionQueue.Count > 0)
+                        {
+                            byte addr = 0;
+                            lock (objsync)
+                            {
+                                addr = _BoxActionQueue.Dequeue();
+                            }
+                            // Pregunto el estado del dispositivo
+                            PTransporte trama = new PTransporte();
+                            trama.DATA = new PLockerTablet()
+                            {
+                                ADDR = addr,
+                                CMD = PLocker.enumCMD.DoorOpen
+                            };
+                            byte[] b = trama.ToArray();
+                            stream.Write(b, 0, b.Length);
+                        }
+
+
+                        if (DateTime.Now.Subtract(timeref).TotalMilliseconds > 500)
+                        {
+                            timeref = DateTime.Now;
+                            // Pregunto el estado del dispositivo
+                            PTransporte trama = new PTransporte();
+                            trama.DATA = new PLockerTablet()
+                            {
+                                ADDR = 0xf0,
+                                CMD = PLocker.enumCMD.RqtLockAndInfraredStatus
+                            };
+                            byte[] b = trama.ToArray();
+                            stream.Write(b, 0, b.Length);
+                        }
+
+                        if (Cliente.Available > 0)
+                        {
+                            int Reallen = stream.Read(rx, 0, Cliente.Available);
+                            int y = 0;
+                            for (int x = 0; x < 1000; x++)
+                            {
+                                switch (rxstate)
+                                {
+                                    case 0:
+                                        y = 0;
+                                        realrx[y] = rx[x];
+                                        if (rx[x] == PTransporte.STX) rxstate = 1;
+                                        break;
+                                    case 1:
+                                        y++;
+                                        realrx[y] = rx[x];
+                                        if (rx[x] == PTransporte.ETX) rxstate = 2;
+                                        break;
+                                    case 2:
+                                        y++;
+                                        realrx[y] = rx[x];
+                                        PLockerBoard l = (PLockerBoard)PTransporte.GetPkt(realrx, y + 1);
+                                        if (l != null)
+                                        {
+                                            UInt16 sd = BitConverter.ToUInt16(l.STATUS, 0);
+                                            UInt16 ss = BitConverter.ToUInt16(l.STATUS, 2);
+                                            bool cuchange = false;
+                                            if (this._CU[l.CU].DoorStatus.Status != sd)
+                                            {
+                                                this._CU[l.CU].DoorStatus.Status = sd;
+                                                cuchange = true;
+                                            }
+                                            if (this._CU[l.CU].SensorStatus.Status != ss)
+                                            {
+                                                this._CU[l.CU].SensorStatus.Status = ss;
+                                                cuchange = true;
+                                            }
+                                            if (cuchange) this.SendOnCUChange(this._CU[l.CU]);
+
+                                            rxstate = 0;
+                                        }
+
+                                        break;
+
+                                }
+                            }
+                        }
+                        else Thread.Sleep(100); // dormimos si no hay datos
+                    }
+                }
+                catch (ThreadInterruptedException) { throw; }
+                catch (Exception er)
+                {
+                    this.SendOnError(er);
+                }
+                this.SendOnDisConnection();
+                Thread.Sleep(100);
             }
-            catch { }
+
+
         }
     }
 
