@@ -11,7 +11,8 @@ namespace DCMLocker.Shared
     {
         Task LockerSet(int OrderID, string message);
         Task LockerUpdated(int OrderID, string message);
-
+        Task Desconexion(bool message);
+        Task Conexion(bool message);
         Task AddClientGrupoLocker();
     }
 }

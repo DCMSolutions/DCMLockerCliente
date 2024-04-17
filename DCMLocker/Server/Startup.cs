@@ -200,6 +200,7 @@ namespace DCMLocker.Server
                         endpoints.MapControllers();
                         endpoints.MapRazorPages();
                         endpoints.MapHub<QRReaderHub>("/KioskApp/QRReaderHub");
+                        endpoints.MapHub<LockerHub>("/KioskApp/LockerHub");
                         endpoints.MapFallbackToFile("/KioskApp/{*path:nonfile}",
                         "KioskApp/index.html");
                     });

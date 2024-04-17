@@ -67,8 +67,6 @@ namespace DCMLocker.Server.Background
         /// Atiende al evento Start de los servicios.
         /// Activa la comunicacion con el locker
         /// </summary>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
         //---------------------------------------------------------------------------
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -110,6 +108,7 @@ namespace DCMLocker.Server.Background
         private static void Driver_OnError(object sender, EventArgs e)
         {
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message);
+            
         }
         //------------------------------------------------------------------------------
         /// <summary>
@@ -119,9 +118,10 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //------------------------------------------------------------------------------
-        private static void Driver_OnDisConnection(object sender, EventArgs e)
+        private void Driver_OnDisConnection(object sender, EventArgs e)
         {
             Console.WriteLine("DESCONEXION");
+            _hubContext.Clients.All.Desconexion(true);
         }
         //------------------------------------------------------------------------------
         /// <summary>
@@ -131,9 +131,10 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //------------------------------------------------------------------------------
-        private static void Driver_OnConnection(object sender, EventArgs e)
+        private void Driver_OnConnection(object sender, EventArgs e)
         {
             Console.WriteLine("--------- CONEXION-----------------");
+            _hubContext.Clients.All.Conexion(true);
         }
         //------------------------------------------------------------------------------
         /// <summary>

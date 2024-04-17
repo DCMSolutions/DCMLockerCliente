@@ -142,15 +142,20 @@ else if (screen == "connectionError")
     bool isVisible;
     string screen = "keyboard";
     int door;
-    private HubConnection hubConnection;
+    private HubConnection hubConnectionQR;
+    private HubConnection hubConnectionLocker;
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder()
+        hubConnectionQR = new HubConnectionBuilder()
         .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
         .Build();
 
-        hubConnection.On<string>("ReceiveToken", (string text) =>
+        hubConnectionLocker = new HubConnectionBuilder()
+        .WithUrl(Nav.ToAbsoluteUri("/LockerHub"))
+        .Build();
+
+        hubConnectionQR.On<string>("ReceiveToken", (string text) =>
         {
             text = text.Substring(0, Math.Min(text.Length, 6));
 
@@ -184,13 +189,26 @@ else if (screen == "connectionError")
             {
                 Console.WriteLine("Input contains more than 6 numbers.");
                 ShowNotificationError("El código contiene mas de 6 números.");
-            }
+            } 
 
 
             StateHasChanged();
         });
 
-        await hubConnection.StartAsync();
+        hubConnectionLocker.On<bool>("Conexion", (bool message) =>
+        {
+            Console.WriteLine("Se conectó la placa.");
+            ShowNotificationError("Se conectó la placa.");
+        });
+
+        hubConnectionLocker.On<bool>("Desconexion", (bool message) =>
+        {
+            Console.WriteLine("Se desconectó la placa.");
+            ShowNotificationError("Se desconectó la placa.");
+        });
+
+        await hubConnectionQR.StartAsync();
+        await hubConnectionLocker.StartAsync();
     }
 
     void visibility()

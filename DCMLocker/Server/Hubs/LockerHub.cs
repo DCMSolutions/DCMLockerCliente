@@ -22,11 +22,20 @@ namespace DCMLocker.Server.Hubs
             //await Clients.All.OrderUpdated(OrderID, Message);
         }
 
+        public async Task SendDesconexion(bool message)
+        {
+            await Clients.Groups("GP_LOCKER").Desconexion(message);
+        }
+        public async Task SendConexion(bool message)
+        {
+            await Clients.Groups("GP_LOCKER").Conexion(message);
+        }
+
         public async Task AddClientGrupoLocker()
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, "GP_LOCKER");
         }
-       
+        
 
     }
 }

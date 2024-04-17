@@ -190,14 +190,15 @@ namespace DCMLockerCommunication
                         DateTime timeref = DateTime.Now;
                         NetworkStream stream = Cliente.GetStream();
                         this.SendOnConnection();
-                        while (Cliente.Connected)
+                        bool connectedLocal = true;
+                        while (Cliente.Connected && connectedLocal)
                         {
                             Ping ping = new Ping();
                             PingReply reply = await ping.SendPingAsync(IP);
 
                             if (reply.Status != IPStatus.Success)
                             {
-                                throw new Exception("Ping error");
+                                connectedLocal = false;
                             }
 
                             if (_BoxActionQueue.Count > 0)
