@@ -56,6 +56,7 @@ namespace DCMLockerCommunication
         public event EventHandler OnDisConnection;
         public event EventHandler OnCUChange;
         public event EventHandler OnError;
+        public event EventHandler OnLog;
 
         protected CU[] _CU;
         protected Queue<byte> _BoxActionQueue;
@@ -90,6 +91,15 @@ namespace DCMLockerCommunication
             try
             {
                 OnError?.Invoke(this, new EvtArgError() { Er = er });
+            }
+            catch { }
+        }
+        
+        protected void SendOnLog(string text)
+        {
+            try
+            {
+                OnLog?.Invoke(text, null);
             }
             catch { }
         }
@@ -183,12 +193,16 @@ namespace DCMLockerCommunication
             {
                 try
                 {
+                    SendOnLog("1");
                     TcpClient Cliente = new TcpClient();
                     await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
+                    SendOnLog("2");
                     DateTime timeref = DateTime.Now;
                     NetworkStream stream = Cliente.GetStream();
+                    SendOnLog("3");
                     this.SendOnConnection();
                     bool connectedLocal = true;
+                    SendOnLog("4");
                     while (Cliente.Connected && connectedLocal)
                     {
                         Ping ping = new Ping();

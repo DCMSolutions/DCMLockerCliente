@@ -51,6 +51,7 @@ namespace DCMLocker.Server.Background
             driver.OnDisConnection += Driver_OnDisConnection;
             driver.OnError += Driver_OnError;
             driver.OnCUChange += Driver_OnCUChange;
+            driver.OnLog += Driver_OnLog;
         }
 
         //---------------------------------------------------------------------------
@@ -155,8 +156,11 @@ namespace DCMLocker.Server.Background
             //    Console.WriteLine($"PUERTAS [{x}]: {v.CU.DoorStatus[x]}");
             //    Console.WriteLine($"SENSOR [{x}]: {v.CU.SensorStatus[x]}");
             //}
+        }
 
-
+        private void Driver_OnLog(object sender, EventArgs e)
+        {
+            Console.WriteLine("Log: " + sender);
         }
 
         public static CU GetCUState(int CUid)
