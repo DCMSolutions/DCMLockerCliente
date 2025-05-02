@@ -229,14 +229,12 @@ else if (screen == "ip")
     <button type="button" class="btn btn-danger btn-user btn-block" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
 
     <br />
-    <a>
-        - 01: Error de conexión con controladora de cerraduras.
-        - 02: Error de conexión al servidor.
-        - 03: Error de conexión de red ethernet.
-        - 04: Error de conexión a internet.
-        - 05: Error de conexión de cerraduras y de internet.
-        - 99: Error inesperado.
-    </a>
+    <a>- 01: Error de conexión con controladora de cerraduras.</a>
+    <a>- 02: Error de conexión al servidor.</a>
+    <a>- 03: Error de conexión de red ethernet.</a>
+    <a>- 04: Error de conexión a internet.</a>
+    <a>- 05: Error de conexión de cerraduras y de internet.</a>
+    <a>- 99: Error inesperado.</a>
     <br />
 }
 else if (screen == "alerta")
@@ -256,6 +254,7 @@ else if (screen == "alerta")
 @code {
     int[] token = { };
     bool isVisible;
+
     string screen = "keyboard";
     int door;
     private HubConnection QRhubConnection;
@@ -411,6 +410,8 @@ else if (screen == "alerta")
     async void send()
     {
         string resultado = string.Concat(token);
+        token = new int[0];
+
         if (resultado == "3942")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
@@ -453,9 +454,6 @@ else if (screen == "alerta")
                 CheckEstados();
             }
         }
-        Console.WriteLine($"screen {screen}");
-        token = new int[0];
-
         StateHasChanged();
     }
 
