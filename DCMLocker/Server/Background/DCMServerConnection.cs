@@ -100,7 +100,10 @@ namespace DCMLocker.Server.Background
 
                 try
                 {
+                    Console.WriteLine("a ver el fail: 1");
+
                     string cerraduras = _system.GetEstadoCerraduras();
+                    Console.WriteLine("a ver el fail: 2");
 
                     try
                     {
@@ -108,7 +111,6 @@ namespace DCMLocker.Server.Background
                         var node = JsonNode.Parse(stream)!;
                         delayStatus = node["DelayStatus"]?.GetValue<int>() ?? 1000;
                         tewerID = node["TewerID"]?.GetValue<int>() ?? 0;
-                        Console.WriteLine($"todo ok, los valores son: {delayStatus} y el id {tewerID}");
                     }
                     catch (Exception ex)
                     {
@@ -117,7 +119,8 @@ namespace DCMLocker.Server.Background
                         tewerID = 0;
                     }
 
-                    
+                    Console.WriteLine("a ver el fail: 3");
+
 
                     var serverCommunication = new ServerStatus
                     {
@@ -131,7 +134,10 @@ namespace DCMLocker.Server.Background
                         Locker = GetLockerStatus(previousStates, cerraduras == "Conectadas") // Function to optimize locker status retrieval
                     };
 
+                    Console.WriteLine("a ver el fail: 4");
+
                     var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
+                    Console.WriteLine("a ver el fail: 5");
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -153,12 +159,13 @@ namespace DCMLocker.Server.Background
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine($"a ver el fail: fallo: {ex.Message}");
+                    Console.WriteLine($"a ver el fail: conectao: {estaConectado}");
+
                     if (estaConectado != false)
                     {
                         await checkFail();
                     }
-                    // Handle other unexpected exceptions
-                    Console.WriteLine($"An unexpected error occurred: {ex.Message}");
                 }
             }
 
