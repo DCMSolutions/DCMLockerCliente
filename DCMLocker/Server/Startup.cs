@@ -1,22 +1,23 @@
+using DCMLocker.Server.BaseController;
+using DCMLocker.Server.Controllers;
+using DCMLocker.Server.Hubs;
+using DCMLocker.Server.Webhooks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using System.Linq;
-using Microsoft.AspNetCore.HttpOverrides;
-using System.Net;
-using DCMLocker.Server.Hubs;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using DCMLocker.Server.BaseController;
-using Microsoft.Extensions.FileProviders;
 using System.IO;
-using DCMLocker.Server.Controllers;
-using DCMLocker.Server.Webhooks;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 
 namespace DCMLocker.Server
 {
@@ -48,10 +49,31 @@ namespace DCMLocker.Server
 
             // SignalR 
             services.AddSignalR();
-            
+
             services.AddControllersWithViews();
             services.AddRazorPages();
             services.AddHttpClient();
+
+            //un httpclient especial para el envio de status que se mantenga limpiandose por cualquier caida
+            services.AddHttpClient("ServerStatusClient", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(10);
+                client.DefaultRequestVersion = HttpVersion.Version11;
+                client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+            })
+                .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+                {
+                    // Claves para que no “quede pegado” al pool tras caídas de red/DNS
+                    PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+                    PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30),
+                    ConnectTimeout = TimeSpan.FromSeconds(5),
+                
+                    // Opcional, pero útil:
+                    AutomaticDecompression = DecompressionMethods.All
+                })
+                // Esto rota el handler cada X tiempo, ayudando a “sanear” el pool
+                .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+                
 
             services.AddScoped<LockerController>();
             services.AddSingleton<LogController>();
@@ -121,8 +143,8 @@ namespace DCMLocker.Server
 
                    first.UseBlazorFrameworkFiles("/ClientApp");
 
-                    // Se debe de agregar la ruta fisica para habilitar los archivos estaticos en las imagenes
-                    first.UseStaticFiles();
+                   // Se debe de agregar la ruta fisica para habilitar los archivos estaticos en las imagenes
+                   first.UseStaticFiles();
                    first.UseStaticFiles("/ClientApp");
                    first.UseStaticFiles(
                        new StaticFileOptions
@@ -213,7 +235,7 @@ namespace DCMLocker.Server
                         "KioskApp/index.html");
                     });
                 });
-            
+
             // app.UseHttpsRedirection();
             app.UseBlazorFrameworkFiles();
             app.UseStaticFiles();

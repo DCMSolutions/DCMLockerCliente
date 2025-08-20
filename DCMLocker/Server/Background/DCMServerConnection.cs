@@ -23,14 +23,13 @@ using System.Runtime.ConstrainedExecution;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 
 namespace DCMLocker.Server.Background
 {
     public class DCMServerConnection : BackgroundService
     {
-        private readonly ServerHub _chatHub;
-        private readonly HttpClient _httpClient;
+        private readonly ServerHub _chatHub; 
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly TBaseLockerController _base;
         private readonly IDCMLockerController _driver;
         private readonly IConfiguration _configuration;
@@ -38,10 +37,12 @@ namespace DCMLocker.Server.Background
         private readonly LogController _evento;
         private readonly WebhookService _webhookService;
 
-        public DCMServerConnection(IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento, WebhookService webhookService)
+        private HttpClient _http; // instancia que obtenemos de la factory
+
+        public DCMServerConnection(IHubContext<ServerHub> hubContext, ServerHub chatHub, IHttpClientFactory httpClientFactory, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento, WebhookService webhookService)
         {
             _chatHub = chatHub;
-            _httpClient = httpClient;
+            _httpClientFactory = httpClientFactory;
             _base = Base;
             _driver = driver;
             _configuration = configuration;
@@ -55,6 +56,8 @@ namespace DCMLocker.Server.Background
             bool estaConectado = true;
             int delayStatus = 1000;
             int tewerID = 0;
+            
+            _http = _httpClientFactory.CreateClient("ServerStatusClient");
 
             async Task checkFail()
             {
@@ -68,7 +71,7 @@ namespace DCMLocker.Server.Background
                 {
                     try
                     {
-                        using var response = await _httpClient.GetAsync("https://www.google.com", stoppingToken);
+                        using var response = await _http.GetAsync("https://www.google.com", stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
                             _evento.AddEvento(new Evento("Se desconectó del servidor", "conexión falla"));
@@ -100,11 +103,8 @@ namespace DCMLocker.Server.Background
 
                 try
                 {
-                    Console.WriteLine("a ver el fail: 1");
-
                     string cerraduras = _system.GetEstadoCerraduras();
-                    Console.WriteLine("a ver el fail: 2");
-
+                 
                     try
                     {
                         using var stream = new FileStream("configjson.json", FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -119,9 +119,6 @@ namespace DCMLocker.Server.Background
                         tewerID = 0;
                     }
 
-                    Console.WriteLine("a ver el fail: 3");
-
-
                     var serverCommunication = new ServerStatus
                     {
                         NroSerie = _base.Config.LockerID,
@@ -134,10 +131,7 @@ namespace DCMLocker.Server.Background
                         Locker = GetLockerStatus(previousStates, cerraduras == "Conectadas") // Function to optimize locker status retrieval
                     };
 
-                    Console.WriteLine("a ver el fail: 4");
-
-                    var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
-                    Console.WriteLine("a ver el fail: 5");
+                    using var response = await _http.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status",serverCommunication,stoppingToken);
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -159,13 +153,11 @@ namespace DCMLocker.Server.Background
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"a ver el fail: fallo: {ex.Message}");
-                    Console.WriteLine($"a ver el fail: conectao: {estaConectado}");
-
                     if (estaConectado != false)
                     {
                         await checkFail();
                     }
+                    _http = _httpClientFactory.CreateClient("ServerStatusClient");
                 }
             }
 
