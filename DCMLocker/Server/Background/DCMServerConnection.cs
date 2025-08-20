@@ -71,7 +71,7 @@ namespace DCMLocker.Server.Background
                 {
                     try
                     {
-                        using var response = await _http.GetAsync("https://www.google.com", stoppingToken);
+                        using var response = await _http.GetAsync("https://www.google.com/generate_204", stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
                             _evento.AddEvento(new Evento("Se desconectó del servidor", "conexión falla"));
@@ -99,7 +99,8 @@ namespace DCMLocker.Server.Background
 
             while (true)    //!stoppingToken.IsCancellationRequested dio problemas
             {
-                await Task.Delay(delayStatus);     //parece troll que esté arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
+                await Task.Delay(Math.Max(100, delayStatus), stoppingToken);
+                //parece troll que esté arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
 
                 try
                 {
