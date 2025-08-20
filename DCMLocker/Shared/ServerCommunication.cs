@@ -17,6 +17,8 @@ namespace DCMLocker.Shared
         public string? Version { get; set; }
         public string? IP { get; set; }
         public string? EstadoCerraduras { get; set; }
+        public int? DelayStatus { get; set; }
+        public int? TewerID { get; set; }
     }
 
     public class ServerConfig

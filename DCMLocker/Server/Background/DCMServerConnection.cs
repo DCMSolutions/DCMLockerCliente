@@ -13,12 +13,14 @@ using Microsoft.Extensions.Logging;
 using Radzen.Blazor.Rendering;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.ConstrainedExecution;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
@@ -27,7 +29,6 @@ namespace DCMLocker.Server.Background
 {
     public class DCMServerConnection : BackgroundService
     {
-        private readonly ILogger<DCMServerConnection> _logger;
         private readonly ServerHub _chatHub;
         private readonly HttpClient _httpClient;
         private readonly TBaseLockerController _base;
@@ -37,9 +38,8 @@ namespace DCMLocker.Server.Background
         private readonly LogController _evento;
         private readonly WebhookService _webhookService;
 
-        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento, WebhookService webhookService)
+        public DCMServerConnection(IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento, WebhookService webhookService)
         {
-            _logger = logger;
             _chatHub = chatHub;
             _httpClient = httpClient;
             _base = Base;
@@ -53,6 +53,8 @@ namespace DCMLocker.Server.Background
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             bool estaConectado = true;
+            int delayStatus = 1000;
+            int tewerID = 0;
 
             async Task checkFail()
             {
@@ -94,11 +96,28 @@ namespace DCMLocker.Server.Background
 
             while (true)    //!stoppingToken.IsCancellationRequested dio problemas
             {
-                await Task.Delay(1000);     //parece troll que esté arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
+                await Task.Delay(delayStatus);     //parece troll que esté arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
 
                 try
                 {
                     string cerraduras = _system.GetEstadoCerraduras();
+
+                    try
+                    {
+                        using var stream = new FileStream("configjson.json", FileMode.Open, FileAccess.Read, FileShare.Read);
+                        var node = JsonNode.Parse(stream)!;
+                        delayStatus = node["DelayStatus"]?.GetValue<int>() ?? 1000;
+                        tewerID = node["TewerID"]?.GetValue<int>() ?? 0;
+                        Console.WriteLine($"todo ok, los valores son: {delayStatus} y el id {tewerID}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error al leer configjson: {ex.Message}");
+                        delayStatus = 1000;
+                        tewerID = 0;
+                    }
+
+                    
 
                     var serverCommunication = new ServerStatus
                     {
@@ -106,6 +125,8 @@ namespace DCMLocker.Server.Background
                         Version = _configuration["Version"],
                         IP = GetIP(),
                         EstadoCerraduras = cerraduras,
+                        DelayStatus = delayStatus,
+                        TewerID = tewerID,
                         LastUpdateTime = DateTime.Now,
                         Locker = GetLockerStatus(previousStates, cerraduras == "Conectadas") // Function to optimize locker status retrieval
                     };
@@ -116,10 +137,10 @@ namespace DCMLocker.Server.Background
                     {
                         if (estaConectado != true)
                         {
+                            estaConectado = true;
                             _evento.AddEvento(new Evento("Se conectó al servidor", "conexión"));
                             _webhookService.SendWebhook("Conexion", "El locker se reconectó", new { Accion = "Conexión" });
                             await _chatHub.UpdateStatus("Conexion al servidor");
-                            estaConectado = true;
                         }
                     }
                     else
@@ -143,65 +164,72 @@ namespace DCMLocker.Server.Background
 
             List<TLockerMapDTO> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates, bool cerrConectadas)
             {
-                var newList = new List<TLockerMapDTO>();
-
-                foreach (var locker in _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null))
+                try
                 {
-                    var idFisico = locker.IdFisico.GetValueOrDefault();
-                    var _CU = idFisico / 16;
-                    var _Box = idFisico % 16;
+                    var newList = new List<TLockerMapDTO>();
 
-                    var status = _driver.GetCUState(_CU);
-                    bool _puerta = status.DoorStatus[_Box];
-                    bool _ocupacion = status.SensorStatus[_Box];
-
-                    // Check if state changed
-                    if (cerrConectadas && previousStates.TryGetValue(locker.IdBox, out var previousState))
+                    foreach (var locker in _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null))
                     {
-                        if (previousState.Puerta != _puerta)
+                        var idFisico = locker.IdFisico.GetValueOrDefault();
+                        var _CU = idFisico / 16;
+                        var _Box = idFisico % 16;
+
+                        var status = _driver.GetCUState(_CU);
+                        bool _puerta = status.DoorStatus[_Box];
+                        bool _ocupacion = status.SensorStatus[_Box];
+
+                        // Check if state changed
+                        if (cerrConectadas && previousStates.TryGetValue(locker.IdBox, out var previousState))
                         {
-                            if (_puerta)
+                            if (previousState.Puerta != _puerta)
                             {
-                                _evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
-                                _webhookService.SendWebhook("LockerCerrado", $"Se cerró la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
+                                if (_puerta)
+                                {
+                                    _evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
+                                    _webhookService.SendWebhook("LockerCerrado", $"Se cerró la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
+                                }
+                                else
+                                {
+                                    _evento.AddEvento(new Evento($"Se abrió la puerta del box {locker.IdBox}", "cerraduras"));
+                                    _webhookService.SendWebhook("LockerAbierto", $"Se abrió la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
+                                }
                             }
-                            else
+                            if (previousState.Ocupacion != _ocupacion)
                             {
-                                _evento.AddEvento(new Evento($"Se abrió la puerta del box {locker.IdBox}", "cerraduras"));
-                                _webhookService.SendWebhook("LockerAbierto", $"Se abrió la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
+                                if (_ocupacion)
+                                {
+                                    _evento.AddEvento(new Evento($"Se detectó presencia en el box {locker.IdBox}", "sensores"));
+                                    _webhookService.SendWebhook("SensorOcupado", $"Se detectó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
+                                }
+                                else
+                                {
+                                    _evento.AddEvento(new Evento($"Se liberó presencia en el box {locker.IdBox}", "sensores"));
+                                    _webhookService.SendWebhook("SensorLiberado", $"Se liberó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
+                                }
                             }
                         }
-                        if (previousState.Ocupacion != _ocupacion)
+
+                        // Update state tracking
+                        previousStates[locker.IdBox] = (_puerta, _ocupacion);
+
+                        newList.Add(new TLockerMapDTO
                         {
-                            if (_ocupacion)
-                            {
-                                _evento.AddEvento(new Evento($"Se detectó presencia en el box {locker.IdBox}", "sensores"));
-                                _webhookService.SendWebhook("SensorOcupado", $"Se detectó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
-                            }
-                            else
-                            {
-                                _evento.AddEvento(new Evento($"Se liberó presencia en el box {locker.IdBox}", "sensores"));
-                                _webhookService.SendWebhook("SensorLiberado", $"Se liberó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
-                            }
-                        }
+                            Id = locker.IdBox,
+                            Enable = locker.Enable,
+                            AlamrNro = locker.AlamrNro,
+                            Size = locker.Size,
+                            TempMax = locker.TempMax,
+                            TempMin = locker.TempMin,
+                            Puerta = _puerta,
+                            Ocupacion = _ocupacion
+                        });
                     }
-
-                    // Update state tracking
-                    previousStates[locker.IdBox] = (_puerta, _ocupacion);
-
-                    newList.Add(new TLockerMapDTO
-                    {
-                        Id = locker.IdBox,
-                        Enable = locker.Enable,
-                        AlamrNro = locker.AlamrNro,
-                        Size = locker.Size,
-                        TempMax = locker.TempMax,
-                        TempMin = locker.TempMin,
-                        Puerta = _puerta,
-                        Ocupacion = _ocupacion
-                    });
+                    return newList;
                 }
-                return newList;
+                catch
+                {
+                    return new();
+                }
             }
         }
 

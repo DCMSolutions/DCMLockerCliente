@@ -55,7 +55,7 @@ namespace DCMLocker.Server.Webhooks
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending webhook: {ex.Message}");
-                _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
+                _ = Task.Run(() => _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook")));
                 return false;
             }
         }
@@ -83,7 +83,7 @@ namespace DCMLocker.Server.Webhooks
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending webhook: {ex.Message}");
-                _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
+                _ = Task.Run(() => _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook")));
                 return false;
             }
         }

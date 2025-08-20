@@ -13,11 +13,10 @@ namespace DCMLocker.Server.Controllers
     [ApiController]
     public class LogController : ControllerBase
     {
-        private string fileNameAhora = Path.Combine("/home/pi", $"eventos-{DateTime.Now:MM-yyyy}.ans");
-
         [HttpGet]
-        public List<Evento> GetEventos()
+        public async Task<List<Evento>> GetEventos()
         {
+            string fileNameAhora = Path.Combine("/home/pi", $"eventos-{DateTime.Now:MM-yyyy}.ans");
             try
             {
                 if (!System.IO.File.Exists(fileNameAhora))
@@ -25,13 +24,10 @@ namespace DCMLocker.Server.Controllers
                     CrearVacia();
                     return new List<Evento>();
                 }
-                else
-                {
-                    string content = System.IO.File.ReadAllText(fileNameAhora);
-                    List<Evento> consultas = DeserializarConReintento(content);
-                    consultas.Reverse();
-                    return consultas;
-                }
+
+                var eventos = await LeerEventosDesdeArchivo(fileNameAhora);
+                eventos.Reverse();
+                return eventos;
             }
             catch
             {
@@ -40,7 +36,7 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpGet("viejo")]
-        public List<Evento> GetEventosViejos(int mesesAtras)
+        public async Task<List<Evento>> GetEventosViejos(int mesesAtras)
         {
             string fileNameVieja = Path.Combine("/home/pi", $"eventos-{DateTime.Now.AddMonths(-mesesAtras):MM-yyyy}.ans");
 
@@ -50,13 +46,10 @@ namespace DCMLocker.Server.Controllers
                 {
                     return new List<Evento>();
                 }
-                else
-                {
-                    string content = System.IO.File.ReadAllText(fileNameVieja);
-                    List<Evento> consultas = DeserializarConReintento(content);
-                    consultas.Reverse();
-                    return consultas;
-                }
+
+                var eventos = await LeerEventosDesdeArchivo(fileNameVieja);
+                eventos.Reverse();
+                return eventos;
             }
             catch
             {
@@ -65,23 +58,24 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost]
-        public bool AddEvento([FromBody] Evento evento)
+        public async Task<bool> AddEvento([FromBody] Evento evento)
         {
+            string fileNameAhora = Path.Combine("/home/pi", $"eventos-{DateTime.Now:MM-yyyy}.ans");
             try
             {
+                List<Evento> eventos;
                 if (!System.IO.File.Exists(fileNameAhora))
                 {
-                    CrearConEvento(evento);
-                    return true;
+                    eventos = new List<Evento>();
                 }
                 else
                 {
-                    string content = System.IO.File.ReadAllText(fileNameAhora);
-                    List<Evento> eventos = DeserializarConReintento(content);
-                    eventos.Add(evento);
-                    Guardar(eventos);
-                    return true;
+                    eventos = await LeerEventosDesdeArchivo(fileNameAhora);
                 }
+
+                eventos.Add(evento);
+                Guardar(eventos);
+                return true;
             }
             catch
             {
@@ -105,45 +99,88 @@ namespace DCMLocker.Server.Controllers
         //funciones auxiliares
         void CrearVacia()
         {
+            string fileNameAhora = Path.Combine("/home/pi", $"eventos-{DateTime.Now:MM-yyyy}.ans");
             List<Evento> nuevaLista = new();
             string json = JsonSerializer.Serialize(nuevaLista, new JsonSerializerOptions { WriteIndented = true });
-            using StreamWriter sw = System.IO.File.CreateText(fileNameAhora);
-            sw.Write(json);
+            System.IO.File.WriteAllText(fileNameAhora, json);
         }
-        void CrearConEvento(Evento evento)
-        {
-            List<Evento> nuevaLista = new() { evento };
-            string json = JsonSerializer.Serialize(nuevaLista, new JsonSerializerOptions { WriteIndented = true });
-            using StreamWriter sw = System.IO.File.CreateText(fileNameAhora);
-            sw.Write(json);
-        }
+
         void Guardar(List<Evento> eventos)
         {
+            string fileNameAhora = Path.Combine("/home/pi", $"eventos-{DateTime.Now:MM-yyyy}.ans");
             string json = JsonSerializer.Serialize(eventos, new JsonSerializerOptions { WriteIndented = true });
-            using (StreamWriter sw = new StreamWriter(fileNameAhora, false)) // false to overwrite
-            {
-                sw.Write(json);
-            }
+            System.IO.File.WriteAllText(fileNameAhora, json);
         }
 
-        public List<Evento> DeserializarConReintento(string content)
+        //async Task<List<Evento>> LeerEventosDesdeArchivo(string fileName)
+        //{
+        //    try
+        //    {
+        //        using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+        //        var eventos = await JsonSerializer.DeserializeAsync<List<Evento>>(fs);
+        //        return eventos ?? new();
+        //    }
+        //    catch (JsonException)
+        //    {
+        //        return new();
+        //    }
+        //    catch (IOException)
+        //    {
+        //        return new();
+        //    }
+        //}
+        
+        private static readonly JsonSerializerOptions _jsonOpts = new()
         {
-            while (!string.IsNullOrEmpty(content))
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            WriteIndented = false
+        };
+
+        public async Task<List<Evento>> LeerEventosDesdeArchivo(string fileName)
+        {
+            try
             {
+                using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var eventos = await JsonSerializer.DeserializeAsync<List<Evento>>(fs, _jsonOpts);
+                return eventos ?? new();
+            }
+            catch (JsonException)
+            {
+                var nuevos = new List<Evento> { new Evento("se corrompio el viejo", "error") };
+
                 try
                 {
-                    // Intentamos deserializar el contenido
-                    return JsonSerializer.Deserialize<List<Evento>>(content);
-                }
-                catch (JsonException)
-                {
-                    // Si falla, eliminamos el último carácter y reintentamos
-                    content = content.Substring(0, content.Length - 1);
-                }
-            }
+                    var dir = Path.GetDirectoryName(fileName) ?? ".";
+                    var name = Path.GetFileNameWithoutExtension(fileName);
+                    var ext = Path.GetExtension(fileName);
+                    var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+                    var backup = Path.Combine(dir, $"{name}.corrupt-{stamp}{ext}");
 
-            // Si el string queda vacío y no se pudo deserializar, retornamos null o una lista vacía, según prefieras
-            return new();
+                    // Renombrar el archivo corrupto
+                    if (System.IO.File.Exists(fileName))
+                        System.IO.File.Move(fileName, backup); // .NET 5: sin overwrite
+
+                    // Escribir nuevo archivo con un solo evento (movida “atómica” simple)
+                    var tmp = Path.Combine(dir, $"{name}.{Guid.NewGuid():N}.tmp");
+                    await System.IO.File.WriteAllTextAsync(tmp, JsonSerializer.Serialize(nuevos, _jsonOpts));
+                    if (System.IO.File.Exists(fileName)) System.IO.File.Delete(fileName);
+                    System.IO.File.Move(tmp, fileName);
+                }
+                catch
+                {
+                    // Si algo falla al resguardar/crear, devolvemos igual la lista en memoria
+                }
+
+                return nuevos;
+            }
+            catch (IOException)
+            {
+                return new();
+            }
         }
+
+
     }
 }

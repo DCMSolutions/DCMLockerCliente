@@ -30,7 +30,37 @@
                 </div>
             </div>
             <hr><br>
+            <div class="form-group">
+                <label><strong>Tiempo de envío de status</strong></label>
+                <p>Configuración del intervalo entre cada envío de estado, en milisegundos.</p>
+                <div style="display: flex; justify-content: center;">
+                    <input type="number" @bind="delayStatus" class="form-control form-control-user col-6" />
+                </div>
+            </div>
+            <hr><br>
+            <div class="form-group">
+                <label><strong>Tiempo de pestaña superadmin</strong></label>
+                <p>Configuración del tiempo que se tarda en volver de la pestaña de super-administrador, en milisegundos.</p>
+                <div style="display: flex; justify-content: center;">
+                    <input type="number" @bind="superadminTime" class="form-control form-control-user col-6" />
+                </div>
+            </div>
+            <hr><br>
+            <div class="form-group">
+                <label><strong>Tiempo de pestaña admin</strong></label>
+                <p>Configuración del tiempo que se tarda en volver de la pestaña de administrador, en milisegundos.</p>
+                <div style="display: flex; justify-content: center;">
+                    <input type="number" @bind="adminTime" class="form-control form-control-user col-6" />
+                </div>
+            </div>
+            <hr><br>
 
+
+
+
+
+
+            @* 
             <div class="form-group">
                 <label>
                     <strong>
@@ -68,10 +98,7 @@
                 <p>
                     Cargar un logo
                 </p>
-
-            </div>
-
-
+            </div> *@
 
             @*<div class="form-group">
         <label><strong>Tipo de Locker</strong></label>
@@ -156,8 +183,21 @@ else
 @code {
     LockerConfig Config;
     string url;
+    int delayStatus, originalDelayStatus;
+    int superadminTime, originalSuperadminTime;
+    int adminTime, originalAdminTime;
+
+
     protected override async Task OnInitializedAsync()
     {
+        delayStatus = await Cliente.GetDelayStatus();
+        superadminTime = await Cliente.GetSuperadminTime();
+        adminTime = await Cliente.GetAdminTime();
+
+        originalDelayStatus = delayStatus;
+        originalSuperadminTime = superadminTime;
+        originalAdminTime = adminTime;
+        
         Config = await Cliente.GetConfig();
         url = $"{Config.UrlServer}";
     }
@@ -168,40 +208,58 @@ else
         {
             var uriBuilder = new UriBuilder(url);
             Config.UrlServer = uriBuilder.Uri;
-            // Config.UrlServer = new Uri($"http://{Config.UrlServer.IdnHost}:{Config.UrlServer.Port}/");
+            
+            if (delayStatus != originalDelayStatus)
+            {
+                if (!await Cliente.SetDelayStatus(delayStatus))
+                    Console.WriteLine("Error al guardar DelayStatus.");
+            }
+
+            if (superadminTime != originalSuperadminTime)
+            {
+                if (!await Cliente.SetSuperadminTime(superadminTime))
+                    Console.WriteLine("Error al guardar SuperadminTime.");
+            }
+
+            if (adminTime != originalAdminTime)
+            {
+                if (!await Cliente.SetAdminTime(adminTime))
+                    Console.WriteLine("Error al guardar AdminTime.");
+            }
+
             bool r = await Cliente.SetConfig(Config);
             if (r)
             {
                 //notificamos que los cambios fueron registrados
                 ShowNotification(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Exito",
-                        Detail = "Se guardaron con éxito los cambios.",
-                        Duration = 4000
-                    });
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Exito",
+                    Detail = "Se guardaron con éxito los cambios.",
+                    Duration = 4000
+                });
             }
             else
             {
                 //advertencia porque no se grabaron los datos
                 ShowNotification(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Error,
-                        Summary = "Error",
-                        Detail = "Hubo un error en el guardado.",
-                        Duration = 4000
-                    });
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "Hubo un error en el guardado.",
+                    Duration = 4000
+                });
             }
         }
         catch
         {
             ShowNotification(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = "Url del servidor no válido.",
-                    Duration = 4000
-                });
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = "Url del servidor no válido.",
+                Duration = 4000
+            });
 
         }
 

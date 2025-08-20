@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using DCMLocker.Kiosk.Pages.Components
 @using Microsoft.AspNetCore.SignalR.Client;
+@using System.Threading
 @inject NavigationManager Nav
 @inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
 @inject NotificationService NotificationService
@@ -20,7 +21,7 @@
             {
                 @for (int i = 0; i < 6; i++)
                 {
-                    <Circle text=@(token.Length >i ? token[i].ToString():"") />
+                    <Circle text=@(token.Length > i ? token[i].ToString() : "") />
                 }
 
                 <div @onclick=visibility style="position: absolute; right: 80%; width: 20%;">
@@ -31,7 +32,7 @@
             {
                 @for (int i = 0; i < 6; i++)
                 {
-                    <Circle text=@(token.Length >i ? "*":"") />
+                    <Circle text=@(token.Length > i ? "*" : "") />
                 }
 
                 <div @onclick=visibility style="position: absolute; right: 80%; width: 20%;">
@@ -44,18 +45,18 @@
 
         <div class="row justify-content-center align-items-center">
 
-            <div @onclick="()=>addNumber(1)">
-                <Button text="1" />
+            <div>
+                <Button OnClick="@(() => addNumber(1))" text="1" />
             </div>
 
 
-            <div @onclick="()=>addNumber(2)">
-                <Button text="2" />
+            <div>
+                <Button OnClick="@(() => addNumber(2))" text="2" />
             </div>
 
 
-            <div @onclick="()=>addNumber(3)">
-                <Button text="3" />
+            <div>
+                <Button OnClick="@(() => addNumber(3))" text="3" />
             </div>
 
 
@@ -64,18 +65,18 @@
         <div class="row justify-content-center align-items-center">
 
 
-            <div @onclick="()=>addNumber(4)">
-                <Button text="4" />
+            <div>
+                <Button OnClick="@(() => addNumber(4))" text="4" />
             </div>
 
 
-            <div @onclick="()=>addNumber(5)">
-                <Button text="5" />
+            <div >
+                <Button OnClick="@(() => addNumber(5))" text="5" />
             </div>
 
 
-            <div @onclick="()=>addNumber(6)">
-                <Button text="6" />
+            <div >
+                <Button OnClick="@(() => addNumber(6))" text="6" />
             </div>
 
         </div>
@@ -84,18 +85,18 @@
         <div class="row justify-content-center align-items-center">
 
 
-            <div @onclick="()=>addNumber(7)">
-                <Button text="7" />
+            <div>
+                <Button OnClick="@(() => addNumber(7))" text="7" />
             </div>
 
 
-            <div @onclick="()=>addNumber(8)">
-                <Button text="8" />
+            <div >
+                <Button OnClick="@(() => addNumber(8))" text="8" />
             </div>
 
 
-            <div @onclick="()=>addNumber(9)">
-                <Button text="9" />
+            <div>
+                <Button OnClick="@(() => addNumber(9))" text="9" />
             </div>
 
         </div>
@@ -103,16 +104,16 @@
         <div class="row justify-content-center align-items-center">
 
 
-            <div @onclick="()=>deleteNumber()">
-                <Button text="delete" />
+            <div>
+                <Button OnClick="@(() => deleteNumber())" text="delete" />
             </div>
 
-            <div @onclick="()=>addNumber(0)">
-                <Button text="0" />
+            <div>
+                <Button OnClick="@(() => addNumber(0))" text="0" />
             </div>
 
-            <div @onclick="()=>send()">
-                <Button text="send" />
+            <div>
+                <Button OnClick="@(disableTick ? null : (() => send()))" text="send" />
             </div>
 
         </div>
@@ -200,6 +201,8 @@ else if (screen == "red")
     <br />
 
     <a>Versión @version del día @fecha</a>
+    <br />
+    <a>Número de serie: @nroSerie</a>
 
 }
 else if (screen == "ip")
@@ -230,12 +233,19 @@ else if (screen == "ip")
 
     <br />
     <a>- 01: Error de conexión con controladora de cerraduras.</a>
+    <br />
     <a>- 02: Error de conexión al servidor.</a>
+    <br />
     <a>- 03: Error de conexión de red ethernet.</a>
+    <br />
     <a>- 04: Error de conexión a internet.</a>
+    <br />
     <a>- 05: Error de conexión de cerraduras y de internet.</a>
+    <br />
     <a>- 99: Error inesperado.</a>
     <br />
+    <a>Número de serie: @nroSerie</a>
+
 }
 else if (screen == "alerta")
 {
@@ -263,11 +273,15 @@ else if (screen == "alerta")
     string statusRed = "Conexion al servidor";
     string codigo;
     string pregunta;
+    bool disableTick = false;
+    CancellationTokenSource? _cts;      //es para cancelar los task.delay
+
 
     SystemNetwork[] Ips { get; set; }
     SystemNetwork[] IpsFiltered { get; set; }
     string version;
     string fecha;
+    string nroSerie;
     string tewerID;
     string tewerPASS;
 
@@ -281,6 +295,7 @@ else if (screen == "alerta")
 
         version = await Cliente.GetVersion();
         fecha = await Cliente.GetFecha();
+        nroSerie = await Cliente.GetNroSerie();
 
         QRhubConnection = new HubConnectionBuilder()
         .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
@@ -366,6 +381,7 @@ else if (screen == "alerta")
 
     void CheckEstados()
     {
+        _cts?.Cancel();
         StateHasChanged();
         if (estadoCerraduras == "Conectadas" && statusRed == "Conexion al servidor") screen = "keyboard";
         else if (estadoCerraduras == "Desconectadas" && (statusRed == "Desconexion del servidor" || statusRed == "Desconexion de red" || statusRed == "Desconexion de internet")) ScreenError("05");
@@ -409,6 +425,7 @@ else if (screen == "alerta")
 
     async void send()
     {
+        disableTick = true;
         string resultado = string.Concat(token);
         token = new int[0];
 
@@ -417,24 +434,43 @@ else if (screen == "alerta")
             await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
             Cliente.SendWebhookAsync("Debug", "Se ingresó el código de superadmin", new { Accion = "Superadmin" });
 
+            int superadminTime = await Cliente.GetSuperadminTime();
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "red";
             StateHasChanged();
+
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(superadminTime, _cts.Token);
+                CheckEstados();
+            }
+            catch (TaskCanceledException) { } // no hacer nada, el usuario apretó "Volver"
         }
         else if (resultado == "6641")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 6641", "debug"));
             Cliente.SendWebhookAsync("Debug", "Se ingresó el código de admin", new { Accion = "Admin" });
 
+            int adminTime = await Cliente.GetAdminTime();
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "ip";
             StateHasChanged();
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(adminTime);
+                CheckEstados();
+            }
+            catch (TaskCanceledException) { } // no hacer nada, el usuario apretó "Volver"
         }
-        else
+        else if (resultado != "" && resultado != null && resultado != "0")
         {
             try
             {
@@ -454,6 +490,7 @@ else if (screen == "alerta")
                 CheckEstados();
             }
         }
+        disableTick = false;
         StateHasChanged();
     }
 
@@ -461,12 +498,12 @@ else if (screen == "alerta")
     {
         Console.WriteLine("notif error");
         NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = message,
-                Duration = 4000
-            });
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = "Error",
+            Detail = message,
+            Duration = 4000
+        });
     }
 
     async Task esperarQueSeAbra(string resultado)

@@ -132,7 +132,7 @@ namespace DCMLocker.Server.Controllers
             try
             {
                 _evento.AddEvento(new Evento($"Pedido de validación token {Token}", "token"));
-                await _webhookService.SendWebhookAsync("PeticionToken", $"Se envió al servidor el token {Token}", new { Token = Token });
+                var ortaWebhook = await _webhookService.SendWebhookAsync("PeticionToken", $"Se envió al servidor el token {Token}", new { Token = Token });
 
                 int _CU;
                 int _Box;
@@ -714,6 +714,7 @@ namespace DCMLocker.Server.Controllers
                 bool changeID = _base.Config.LockerID != data.LockerID;
                 bool changeURL = _base.Config.UrlServer != data.UrlServer;
                 var viejaURL = _base.Config.UrlServer;
+                var viejoID = _base.Config.LockerID;
 
                 if (changeID)
                 {
@@ -741,6 +742,11 @@ namespace DCMLocker.Server.Controllers
                 _base.Config.Save(_base.PathBase);
 
                 if (changeURL) await _webhookService.SendWebhookAsync("ConfiguracionURL", $"Se cambió la configuración del locker: la URL del servidor cambió de {viejaURL} a {data.UrlServer}", new { Viejo = viejaURL, Nuevo = data.UrlServer });
+                if (changeID)
+                {
+                    await Task.Delay(1000);
+                    await _webhookService.SendWebhookAsync("ConfiguracionID", $"Se cambió la configuración del locker: el ID del locker cambió de {viejoID} a {data.LockerID}", new { Viejo = viejoID, Nuevo = data.LockerID });
+                }
 
                 return Ok();
             }
@@ -1085,6 +1091,20 @@ namespace DCMLocker.Server.Controllers
                 }
 
                 return NotFound("No se encontro el valor.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("GetNroSerie")]
+        public IActionResult GetNroSerie()
+        {
+            try
+            {
+                string nroSerie = _base.Config.LockerID;
+                return Ok(nroSerie);
             }
             catch (Exception ex)
             {

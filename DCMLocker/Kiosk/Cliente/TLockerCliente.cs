@@ -33,6 +33,7 @@ namespace DCMLocker.Kiosk.Cliente
         ///  Solicitud de estado actual
         /// </summary>
         /// <returns></returns>-----------------------------------------------------------
+     
         public async Task<LockerCU[]> GetState()
         {
             var token = await _auth.GetTokenAsync();
@@ -67,6 +68,7 @@ namespace DCMLocker.Kiosk.Cliente
         ///  Solicitud de configuracion del locker
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+       
         public async Task<LockerConfig> GetConfig()
         {
             LockerConfig retorno = null;
@@ -98,11 +100,13 @@ namespace DCMLocker.Kiosk.Cliente
                 throw;
             }
         }
+
         /// <summary>---------------------------------------------------------------------
         ///  Configura locker
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>-----------------------------------------------------------
+       
         public async Task<bool> SetConfig(LockerConfig data)
         {
             var token = await _auth.GetTokenAsync();
@@ -134,11 +138,13 @@ namespace DCMLocker.Kiosk.Cliente
                 throw;
             }
         }
+
         /// <summary>---------------------------------------------------------------------
         ///   Solicitud de configuracion de caja
         /// </summary>
         /// <param name="IdBox"></param>
         /// <returns></returns>-----------------------------------------------------------
+        
         public async Task<TLockerMap> GetBoxConfig(int IdBox)
         {
             TLockerMap retorno = null;
@@ -170,11 +176,13 @@ namespace DCMLocker.Kiosk.Cliente
                 throw;
             }
         }
+
         /// <summary>---------------------------------------------------------------------
         ///  Set la configuracion de caja
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>-----------------------------------------------------------
+        
         public async Task<bool> SetBoxConfig(TLockerMap data)
         {
             var token = await _auth.GetTokenAsync();
@@ -206,10 +214,12 @@ namespace DCMLocker.Kiosk.Cliente
                 throw;
             }
         }
+
         /// <summary>---------------------------------------------------------------------
         ///  Solicitud de Cajas del usuario
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+       
         public async Task<LockerUserPerfil> GetMyBox()
         {
             var token = await _auth.GetTokenAsync();
@@ -245,6 +255,7 @@ namespace DCMLocker.Kiosk.Cliente
         ///  Solicitud de Cajas del usuario
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+       
         public async Task<LockerUserPerfil> GetBoxFromUser(string user)
         {
             string iduser = user.Replace("@", "%40").Replace(".", "%_");
@@ -277,12 +288,12 @@ namespace DCMLocker.Kiosk.Cliente
 
         }
 
-
         /// <summary>-----------------------------------------------------------------------
         /// Buscador de usuarios
         /// </summary>
         /// <param name="keyword"></param>
         /// <returns></returns>-------------------------------------------------------------
+     
         public async Task<string[]> Search(string keyword)
         {
             var token = await _auth.GetTokenAsync();
@@ -312,6 +323,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
             return new string[0];
         }
+        
         public async Task<string[]> SearchUserFromBox(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
@@ -347,6 +359,7 @@ namespace DCMLocker.Kiosk.Cliente
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>-------------------------------------------------------------
+        
         public async Task<bool> SetLockUser(string user)
         {
             var token = await _auth.GetTokenAsync();
@@ -379,7 +392,6 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
-
         /// <summary>--------------------------------------------------------------------
         ///  Apertura de caja
         /// </summary>
@@ -387,6 +399,7 @@ namespace DCMLocker.Kiosk.Cliente
         /// <param name="box"></param>
         /// <param name="user"></param>
         /// <param name="token"></param>-------------------------------------------------
+        
         public async Task<bool> OpenLocker(int Locker, int box, string user, string tokens)
         {
             var token = await _auth.GetTokenAsync();
@@ -414,12 +427,14 @@ namespace DCMLocker.Kiosk.Cliente
             }
             return false;
         }
+       
         /// <summary>--------------------------------------------------------------------
         /// Asigna una caja al usuario
         /// </summary>
         /// <param name="user"></param>
         /// <param name="box"></param>
         /// <returns></returns>----------------------------------------------------------
+      
         public async Task<bool> SetUserToBox(string user, int box)
         {
             var token = await _auth.GetTokenAsync();
@@ -451,12 +466,14 @@ namespace DCMLocker.Kiosk.Cliente
                 throw;
             }
         }
+     
         /// <summary>--------------------------------------------------------------------
         /// Remueve al usuario de la caja
         /// </summary>
         /// <param name="user"></param>
         /// <param name="box"></param>
         /// <returns></returns>----------------------------------------------------------
+     
         public async Task<bool> SetUserRemoveBox(string user, int box)
         {
             var token = await _auth.GetTokenAsync();
@@ -554,6 +571,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
 
         }
+        
         public async Task<bool> BoxesSeftManagementReserve(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
@@ -726,6 +744,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
 
         }
+        
         public async Task<string[]> System_GetSSID()
         {
             var token = await _auth.GetTokenAsync();
@@ -759,6 +778,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
 
         }
+        
         public async Task<bool> System_SetSSID(string ssid, string pass)
         {
             var token = await _auth.GetTokenAsync();
@@ -791,6 +811,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
 
         }
+        
         public async Task<bool> System_SetWLan(bool state)
         {
             var token = await _auth.GetTokenAsync();
@@ -823,6 +844,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
 
         }
+       
         public async Task<bool> System_Reset()
         {
             var token = await _auth.GetTokenAsync();
@@ -1017,38 +1039,6 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
-        //public async Task<bool> System_OpenChromium()
-        //{
-        //    var token = await _auth.GetTokenAsync();
-        //    if (!string.IsNullOrEmpty(token))
-        //    {
-        //        _cliente.DefaultRequestHeaders.Authorization =
-        //            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        //    }
-        //    try
-        //    {
-        //        var r = await _cliente.PostAsJsonAsync($"System/OpenChromium", "");
-        //        if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
-        //        return false;
-        //    }
-        //    catch (HttpRequestException er)
-        //    {
-        //        Console.WriteLine(er.Message);
-        //        if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
-        //           (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
-        //        {
-        //            _nav.NavigateTo("/login");
-        //            return false;
-        //        }
-        //        else throw;
-        //    }
-        //    catch (Exception er)
-        //    {
-        //        Console.WriteLine("ERROR:" + er.Message);
-        //        return false;
-        //    }
-        //}
-
         /// <summary>--------------------------------------------------------------------
         /// El log y el webhook
         /// </summary>
@@ -1115,9 +1105,9 @@ namespace DCMLocker.Kiosk.Cliente
         /// La version y eso
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+       
         public async Task<string> GetVersion()
         {
-
             try
             {
                 var response = await _cliente.GetAsync("Locker/GetVersion");
@@ -1145,6 +1135,49 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
+        public async Task<string> GetNroSerie()
+        {
+
+            try
+            {
+                var response = await _cliente.GetAsync("Locker/GetNroSerie");
+                var oRta = await response.Content.ReadAsStringAsync();
+                return oRta;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<int> GetSuperadminTime()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("system/SuperadminTime");
+                var oRta = await response.Content.ReadFromJsonAsync<int>();
+                return oRta;
+            }
+            catch (Exception)
+            {
+                return 10000;
+            }
+        }
+
+        public async Task<int> GetAdminTime()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("system/AdminTime");
+                var oRta = await response.Content.ReadFromJsonAsync<int>();
+                return oRta;
+            }
+            catch (Exception)
+            {
+                return 10000;
+            }
+        }
+
         public async Task<bool> PingServer()
         {
             try
@@ -1163,6 +1196,5 @@ namespace DCMLocker.Kiosk.Cliente
                 return false;
             }
         }
-
     }
 }

@@ -33,6 +33,7 @@ namespace DCMLocker.Client.Cliente
         ///  Solicitud de estado actual
         /// </summary>
         /// <returns></returns>-----------------------------------------------------------
+     
         public async Task<LockerCU[]> GetState()
         {
             var token = await _auth.GetTokenAsync();
@@ -67,6 +68,7 @@ namespace DCMLocker.Client.Cliente
         ///  Solicitud de configuracion del locker
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+   
         public async Task<LockerConfig> GetConfig()
         {
             LockerConfig retorno = null;
@@ -98,11 +100,13 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+    
         /// <summary>---------------------------------------------------------------------
         ///  Configura locker
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>-----------------------------------------------------------
+    
         public async Task<bool> SetConfig(LockerConfig data)
         {
             var token = await _auth.GetTokenAsync();
@@ -139,6 +143,7 @@ namespace DCMLocker.Client.Cliente
         ///  Configuracion de tamaños
         /// </summary>
         /// <returns></returns>-----------------------------------------------------------
+    
         public async Task<List<Tamaño>> GetListaDeTamaños()
         {
             try
@@ -151,6 +156,7 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+        
         public async Task<Tamaño> GetTamañoPorId(int id)
         {
             try
@@ -164,6 +170,7 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+        
         public async Task<bool> AgregarTamaño(Tamaño tamaño)
         {
             try
@@ -190,6 +197,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<bool> SubirTamaños(List<Tamaño> listaDeTamaños)
         {
             try
@@ -216,6 +224,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<bool> EditTamaño(Tamaño tamaño)
         {
             try
@@ -242,6 +251,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+    
         public async Task<bool> DeleteTamaño(Tamaño tamaño)
         {
 
@@ -273,6 +283,7 @@ namespace DCMLocker.Client.Cliente
         ///  Configuracion de ids boxes
         /// </summary>
         /// <returns></returns>-----------------------------------------------------------
+      
         public async Task<List<int>> GetListaDeIdBoxDisponibles()
         {
             try
@@ -298,6 +309,7 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+    
         public async Task<List<int>> GetIdSinAsignar()
         {
             try
@@ -316,6 +328,7 @@ namespace DCMLocker.Client.Cliente
         /// </summary>
         /// <param name="IdBox"></param>
         /// <returns></returns>-----------------------------------------------------------
+      
         public async Task<TLockerMap> GetBoxConfig(int IdBox)
         {
             TLockerMap retorno = null;
@@ -347,6 +360,7 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+   
         public async Task<TLockerMap> GetBoxConfigPorId(int idBox)
         {
             TLockerMap retorno = null;
@@ -378,11 +392,13 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+   
         /// <summary>---------------------------------------------------------------------
         ///  Set la configuracion de caja
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>-----------------------------------------------------------
+       
         public async Task<bool> SetBoxConfig(TLockerMap data)
         {
             var token = await _auth.GetTokenAsync();
@@ -414,11 +430,13 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+    
         /// <summary>---------------------------------------------------------------------
         ///  Eliminar la configuracion de la caja (lo editable vuelve al estado original)
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>-----------------------------------------------------------
+       
         public async Task<bool> DeleteBoxConfig(TLockerMap data)
         {
             var token = await _auth.GetTokenAsync();
@@ -450,10 +468,12 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+    
         /// <summary>---------------------------------------------------------------------
         ///  Solicitud de Cajas del usuario
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+     
         public async Task<LockerUserPerfil> GetMyBox()
         {
             var token = await _auth.GetTokenAsync();
@@ -489,6 +509,7 @@ namespace DCMLocker.Client.Cliente
         ///  Solicitud de Cajas del usuario
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+   
         public async Task<LockerUserPerfil> GetBoxFromUser(string user)
         {
             string iduser = user.Replace("@", "%40").Replace(".", "%_");
@@ -521,12 +542,12 @@ namespace DCMLocker.Client.Cliente
 
         }
 
-
         /// <summary>-----------------------------------------------------------------------
         /// Buscador de usuarios
         /// </summary>
         /// <param name="keyword"></param>
         /// <returns></returns>-------------------------------------------------------------
+     
         public async Task<string[]> Search(string keyword)
         {
             var token = await _auth.GetTokenAsync();
@@ -556,6 +577,7 @@ namespace DCMLocker.Client.Cliente
             }
             return new string[0];
         }
+     
         public async Task<List<LockerUserPerfil>> GetAllUsers()
         {
             var token = await _auth.GetTokenAsync();
@@ -615,6 +637,7 @@ namespace DCMLocker.Client.Cliente
             }
             return false;
         }
+    
         public async Task<string[]> SearchUserFromBox(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
@@ -650,6 +673,7 @@ namespace DCMLocker.Client.Cliente
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>-------------------------------------------------------------
+   
         public async Task<bool> SetLockUser(string user)
         {
             var token = await _auth.GetTokenAsync();
@@ -682,7 +706,6 @@ namespace DCMLocker.Client.Cliente
             }
         }
 
-
         /// <summary>--------------------------------------------------------------------
         ///  Apertura de caja
         /// </summary>
@@ -690,6 +713,7 @@ namespace DCMLocker.Client.Cliente
         /// <param name="box"></param>
         /// <param name="user"></param>
         /// <param name="token"></param>-------------------------------------------------
+      
         public async Task<bool> OpenLocker(int Locker, int box, string user, string tokens)
         {
             var token = await _auth.GetTokenAsync();
@@ -717,12 +741,14 @@ namespace DCMLocker.Client.Cliente
             }
             return false;
         }
+      
         /// <summary>--------------------------------------------------------------------
         /// Asigna una caja al usuario
         /// </summary>
         /// <param name="user"></param>
         /// <param name="box"></param>
         /// <returns></returns>----------------------------------------------------------
+    
         public async Task<bool> SetUserToBox(string user, int box)
         {
             var token = await _auth.GetTokenAsync();
@@ -754,12 +780,14 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+     
         /// <summary>--------------------------------------------------------------------
         /// Remueve al usuario de la caja
         /// </summary>
         /// <param name="user"></param>
         /// <param name="box"></param>
         /// <returns></returns>----------------------------------------------------------
+      
         public async Task<bool> SetUserRemoveBox(string user, int box)
         {
             var token = await _auth.GetTokenAsync();
@@ -797,6 +825,7 @@ namespace DCMLocker.Client.Cliente
         /// Retorna el estado de las cajas de configuración fija
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+     
         public async Task<BoxState[]> GetBoxesFixedState()
         {
             var token = await _auth.GetTokenAsync();
@@ -827,6 +856,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+    
         public async Task<int[]> GetBoxesSeftManagement()
         {
             var token = await _auth.GetTokenAsync();
@@ -857,6 +887,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+   
         public async Task<bool> BoxesSeftManagementReserve(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
@@ -894,6 +925,7 @@ namespace DCMLocker.Client.Cliente
         /// Genera Token de acceso
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+    
         public async Task<string> GenerateTokenKey(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
@@ -935,6 +967,7 @@ namespace DCMLocker.Client.Cliente
         /// Genera Token de acceso
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+     
         public async Task<int> TokenKey(string tokenkey)
         {
             var token = await _auth.GetTokenAsync();
@@ -968,6 +1001,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+          
         public async Task<TokenAccessBox[]> GetMyTokenKey()
         {
             var token = await _auth.GetTokenAsync();
@@ -1000,6 +1034,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<SystemNetwork[]> System_GetIP()
         {
             var token = await _auth.GetTokenAsync();
@@ -1030,6 +1065,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<string[]> System_GetSSID()
         {
             var token = await _auth.GetTokenAsync();
@@ -1064,6 +1100,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<bool> System_SetSSID(string ssid, string pass)
         {
             var token = await _auth.GetTokenAsync();
@@ -1096,6 +1133,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<bool> System_SetWLan(bool state)
         {
             var token = await _auth.GetTokenAsync();
@@ -1128,6 +1166,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<bool> System_Reset()
         {
             var token = await _auth.GetTokenAsync();
@@ -1160,6 +1199,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<bool> System_Shutdown()
         {
             var token = await _auth.GetTokenAsync();
@@ -1192,6 +1232,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
+        
         public async Task<SystemNetwork> GetEthernetConfig()
         {
             var token = await _auth.GetTokenAsync();
@@ -1225,6 +1266,7 @@ namespace DCMLocker.Client.Cliente
                 return null;
             }
         }
+        
         public async Task<bool> SendEthernet(SystemEthernet eth)
         {
             var token = await _auth.GetTokenAsync();
@@ -1261,11 +1303,11 @@ namespace DCMLocker.Client.Cliente
             }
         }
 
-
         /// <summary>--------------------------------------------------------------------
         /// La version y eso
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+      
         public async Task<string> GetVersion()
         {
 
@@ -1295,10 +1337,98 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+
+        /// <summary>--------------------------------------------------------------------
+        /// Tiempos configurables
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
+        
+        public async Task<int> GetDelayStatus()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("system/DelayStatus");
+                var oRta = await response.Content.ReadFromJsonAsync<int>();
+                return oRta;
+            }
+            catch (Exception)
+            {
+                return 1000;
+            }
+        }
+
+        public async Task<bool> SetDelayStatus(int delayStatus)
+        {
+            try
+            {
+                var oRta = await _cliente.PostAsJsonAsync("system/DelayStatus", delayStatus);
+                return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<int> GetSuperadminTime()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("system/SuperadminTime");
+                var oRta = await response.Content.ReadFromJsonAsync<int>();
+                return oRta;
+            }
+            catch (Exception)
+            {
+                return 10000;
+            }
+        }
+
+        public async Task<bool> SetSuperadminTime(int superadminTime)
+        {
+            try
+            {
+                var oRta = await _cliente.PostAsJsonAsync("system/SuperadminTime", superadminTime);
+                return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<int> GetAdminTime()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("system/AdminTime");
+                var oRta = await response.Content.ReadFromJsonAsync<int>();
+                return oRta;
+            }
+            catch (Exception)
+            {
+                return 10000;
+            }
+        }
+
+        public async Task<bool> SetAdminTime(int adminTime)
+        {
+            try
+            {
+                var oRta = await _cliente.PostAsJsonAsync("system/AdminTime", adminTime);
+                return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         /// <summary>--------------------------------------------------------------------
         /// El log y eso xd
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
+
         public async Task<List<Evento>> GetEventos()
         {
             try
@@ -1337,5 +1467,6 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+    
     }
 }
