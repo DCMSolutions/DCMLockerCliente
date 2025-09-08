@@ -34,23 +34,19 @@ namespace DCMLocker.Server.Background
         private readonly TBaseLockerController _base;
         private readonly IDCMLockerController _driver;
         private readonly IConfiguration _configuration;
-        //private readonly SystemController _system;
-        //private readonly LogController _evento;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly WebhookService _webhookService;
 
         private HttpClient _http; // instancia que obtenemos de la factory
 
         public DCMServerConnection(IHubContext<ServerHub> hubContext, IHttpClientFactory httpClientFactory, TBaseLockerController Base, IDCMLockerController driver,
-            IConfiguration configuration, /*SystemController system, LogController evento,*/ IServiceScopeFactory scopeFactory, WebhookService webhookService)
+            IConfiguration configuration, IServiceScopeFactory scopeFactory, WebhookService webhookService)
         {
             _hubContext = hubContext;
             _httpClientFactory = httpClientFactory;
             _base = Base;
             _driver = driver;
             _configuration = configuration;
-            //_system = system;
-            //_evento = evento;
             _scopeFactory = scopeFactory;
             _webhookService = webhookService;
         }
@@ -76,7 +72,7 @@ namespace DCMLocker.Server.Background
                 if (GetIP() == "")
                 {
                     evento.AddEvento(new Evento("Se desconectó de red", "conexión falla"));
-                    await _hubContext.Clients.All.SendAsync("UpdateStatus", "Desconexion de red", stoppingToken);
+                    await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de red", stoppingToken);
                 }
                 else
                 {
@@ -86,19 +82,19 @@ namespace DCMLocker.Server.Background
                         if (response.IsSuccessStatusCode)
                         {
                             evento.AddEvento(new Evento("Se desconectó del servidor", "conexión falla"));
-                            await _hubContext.Clients.All.SendAsync("UpdateStatus", "Desconexion del servidor", stoppingToken);
+                            await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion del servidor", stoppingToken);
                         }
                         else
                         {
                             evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
-                            await _hubContext.Clients.All.SendAsync("UpdateStatus", "Desconexion de internet", stoppingToken);
+                            await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de internet", stoppingToken);
                         }
                     }
                     catch (OperationCanceledException) { /* frenado a mano */ }
                     catch
                     {
                         evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
-                        await _hubContext.Clients.All.SendAsync("UpdateStatus", "Desconexion de internet", stoppingToken);
+                        await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de internet", stoppingToken);
                     }
                 }
 
@@ -268,7 +264,7 @@ namespace DCMLocker.Server.Background
                                 evento.AddEvento(new Evento("Se conectó al servidor", "conexión"));
                             }
                             _webhookService.SendWebhook("Conexion", "El locker se reconectó", new { Accion = "Conexión" });
-                            await _hubContext.Clients.All.SendAsync("UpdateStatus", "Conexion al servidor", stoppingToken);
+                            await _hubContext.Clients.All.SendAsync("STATUS", "Conexion al servidor", stoppingToken);
                         }
                     }
                     else

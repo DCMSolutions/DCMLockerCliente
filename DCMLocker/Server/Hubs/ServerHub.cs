@@ -13,8 +13,6 @@ namespace DCMLocker.Server.Hubs
 
         public async Task SendMessage(string user, string message)
         {
-
-            Console.WriteLine(message);
             if (Clients != null)
             {
                 await Clients.All.SendAsync("ReceiveMessage", user, message);
