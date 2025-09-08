@@ -428,6 +428,7 @@ else if (screen == "alerta")
         disableTick = true;
         string resultado = string.Concat(token);
         token = new int[0];
+        _cts?.Cancel();
 
         if (resultado == "3942")
         {
@@ -440,8 +441,6 @@ else if (screen == "alerta")
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "red";
             StateHasChanged();
-
-            _cts?.Cancel();
             _cts = new CancellationTokenSource();
             try
             {
@@ -461,7 +460,6 @@ else if (screen == "alerta")
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "ip";
             StateHasChanged();
-            _cts?.Cancel();
             _cts = new CancellationTokenSource();
             try
             {
@@ -475,7 +473,6 @@ else if (screen == "alerta")
             try
             {
                 await esperarQueSeAbra(resultado);
-
                 screen = "success";
                 StateHasChanged();
                 await Task.Delay(3000);

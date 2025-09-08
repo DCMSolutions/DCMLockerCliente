@@ -1,10 +1,11 @@
-﻿using System;
+﻿using DCMLocker.Server.BaseController;
+using DCMLocker.Server.Controllers;
+using DCMLocker.Shared;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using DCMLocker.Server.BaseController;
-using DCMLocker.Server.Controllers;
-using DCMLocker.Shared;
 
 namespace DCMLocker.Server.Webhooks
 {
@@ -12,13 +13,20 @@ namespace DCMLocker.Server.Webhooks
     {
         private readonly HttpClient _httpClient;
         private readonly TBaseLockerController _base;
-        private readonly LogController _evento;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public WebhookService(HttpClient httpClient , TBaseLockerController Base, LogController evento)
+        public WebhookService(HttpClient httpClient, TBaseLockerController Base, IServiceScopeFactory scopeFactory)
         {
             _httpClient = httpClient;
             _base = Base;
-            _evento = evento;
+            _scopeFactory = scopeFactory;
+        }
+
+        private async Task LogAsync(Evento ev)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var log = scope.ServiceProvider.GetRequiredService<LogController>();
+            await log.AddEvento(ev);
         }
 
         public bool SendWebhook(string evento, string descripcion, object data)
@@ -37,7 +45,7 @@ namespace DCMLocker.Server.Webhooks
                 var payload = new Webhook(evento, config.LockerID, descripcion, data);
 
                 // mando el post en otro lado para que no tenga que ser awaited
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     try
                     {
@@ -46,7 +54,7 @@ namespace DCMLocker.Server.Webhooks
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error sending webhook: {ex.Message}");
-                        _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
+                        await LogAsync(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook")).ConfigureAwait(false);
                     }
                 });
 
@@ -55,7 +63,7 @@ namespace DCMLocker.Server.Webhooks
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending webhook: {ex.Message}");
-                _ = Task.Run(() => _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook")));
+                _ = Task.Run(() => LogAsync(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook")));
                 return false;
             }
         }
@@ -83,7 +91,7 @@ namespace DCMLocker.Server.Webhooks
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending webhook: {ex.Message}");
-                _ = Task.Run(() => _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook")));
+                await LogAsync(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
                 return false;
             }
         }
