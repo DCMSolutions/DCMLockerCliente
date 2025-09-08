@@ -8,26 +8,60 @@
 <h5>Se @pregunta este locker</h5>
 <br />
 
+
 <div style="display: flex; gap: 10px;">
-    <button type="button" style="flex: 1;" class="btn btn-primary btn-user" disabled="@disabled" @onclick="@(e => confirmar())">Confirmar</button>
-    <button type="button" style="flex: 1;" class="btn btn-secondary btn-user" @onclick="@(e => volver())">Cancelar</button>
+    <button type="button"
+            style="flex: 1;"
+            class="btn btn-primary btn-user"
+            disabled="@isBusy"
+            @onclick="ConfirmarAsync">
+        @(isBusy ? "Procesando..." : "Confirmar")
+    </button>
+
+    <button type="button"
+            style="flex: 1;"
+            class="btn btn-secondary btn-user"
+            disabled="@isBusy"
+            @onclick="Volver">
+        Cancelar
+    </button>
 </div>
 
 @code {
     [Parameter] public string pregunta { get; set; }
-    bool disabled = false;
+    private bool isBusy = false;
 
-    public async void confirmar()
+    private async Task ConfirmarAsync()
     {
-        disabled = true;
+        if (isBusy) return;
+        isBusy = true;
         StateHasChanged();
-        if (pregunta == "apagará") await Cliente.System_Shutdown();
-        else if (pregunta == "reseteará") await Cliente.System_Reset();
-        else if (pregunta == "actualizará") await Cliente.System_Update();
-        else Navigation.NavigateTo("/");
+
+        try
+        {
+            switch (pregunta)
+            {
+                case "apagará":
+                    await Cliente.System_Shutdown();
+                    break;
+                case "reseteará":
+                    await Cliente.System_Reset();
+                    break;
+                case "actualizará":
+                    await Cliente.System_Update();
+                    break;
+                default:
+                    Navigation.NavigateTo("/");
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            Navigation.NavigateTo("/");
+        }
     }
 
-    void volver()
+    private void Volver()
     {
         Navigation.NavigateTo("/");
     }

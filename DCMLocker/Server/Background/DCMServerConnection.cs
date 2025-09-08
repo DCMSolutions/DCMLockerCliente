@@ -54,6 +54,7 @@ namespace DCMLocker.Server.Background
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             bool estaConectado = true;
+            int contadorFallos = 0;
             int delayStatus = 1000;
             int tewerID = 0;
             bool _cerrConectadasPrev = false;
@@ -258,6 +259,7 @@ namespace DCMLocker.Server.Background
                         if (estaConectado != true)
                         {
                             estaConectado = true;
+                            contadorFallos = 0;
                             using (var scope = _scopeFactory.CreateScope())
                             {
                                 var evento = scope.ServiceProvider.GetRequiredService<LogController>();
@@ -269,9 +271,13 @@ namespace DCMLocker.Server.Background
                     }
                     else
                     {
-                        if (estaConectado != false)
+                        if (estaConectado != false || contadorFallos%10 == 9)
                         {
                             await checkFail();
+                        }
+                        else
+                        {
+                            contadorFallos++;
                         }
                     }
                 }
@@ -281,9 +287,13 @@ namespace DCMLocker.Server.Background
                 }
                 catch (Exception)
                 {
-                    if (estaConectado != false)
+                    if (estaConectado != false || contadorFallos % 10 == 9)
                     {
                         await checkFail();
+                    }
+                    else
+                    {
+                        contadorFallos++;
                     }
                     _http = _httpClientFactory.CreateClient("ServerStatusClient");
                 }
